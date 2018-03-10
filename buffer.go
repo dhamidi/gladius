@@ -142,13 +142,34 @@ func (b *Buffer) Insert(loc int64, text string) *Buffer {
 
 // Delete removes n characters at loc in the buffer.
 func (b *Buffer) Delete(loc int64, n int64) *Buffer {
-	currentPiece, _, _ := b.pieceAt(loc)
+	currentPiece, offset, listIndex := b.pieceAt(loc)
 	if currentPiece == nil {
 		return b
 	}
 
-	currentPiece.offset = n
-	currentPiece.length -= n
+	// Edit is at beginning of span
+	if offset == loc {
+		currentPiece.offset = n
+		currentPiece.length -= n
+		return b
+	}
+
+	// Edit is in the middle of the span
+	before, after := currentPiece.split(loc - offset)
+	after.offset += n
+	after.length -= n
+	if listIndex == 0 {
+		b.pieces = []*piece{
+			before,
+			after,
+		}
+	} //  else {
+	//         rest := make([]*piece, len(b.pieces[listIndex+1:]))
+	//         copy(rest, b.pieces[listIndex+1:])
+	//         b.pieces = append(b.pieces[0:listIndex], before, newPiece, after)
+	//         b.pieces = append(b.pieces, rest...)
+	// }
+
 	return b
 }
 
