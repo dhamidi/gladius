@@ -68,10 +68,30 @@ func TestBuffer_DeleteRemovesTextAtEnd(t *testing.T) {
 	assertBuffer(t, buffer, "ab")
 }
 
+func TestBuffer_MultipleMixedDeletes(t *testing.T) {
+	buffer := NewBufferString("abc")
+	buffer.Delete(1, 1)
+	buffer.Delete(0, 2)
+	assertBuffer(t, buffer, "")
+}
+
 func TestBuffer_MultipleDeletesStartingInTheMiddle(t *testing.T) {
 	buffer := NewBufferString("abc")
 	buffer.Delete(1, 1)
 	buffer.Delete(1, 1)
 
 	assertBuffer(t, buffer, "a")
+}
+
+func TestBuffer_MixedInsertsAndDeletes(t *testing.T) {
+	buffer := NewBufferString("abc")
+	buffer.Delete(1, 1) // ac
+	assertBuffer(t, buffer, "ac")
+	buffer.Insert(1, "def") // adefc
+	assertBuffer(t, buffer, "adefc")
+	buffer.Delete(3, 2) // ade
+	assertBuffer(t, buffer, "ade")
+	buffer.Insert(0, "casc") // cascade
+
+	assertBuffer(t, buffer, "cascade")
 }

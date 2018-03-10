@@ -3,6 +3,8 @@ package gladius
 import (
 	"bytes"
 	"fmt"
+	"io"
+	"os"
 )
 
 // Buffer is a text buffer supporting simple edit operations at random
@@ -62,6 +64,11 @@ func (p *piece) split(i int64) []*piece {
 
 // text returns the text pointed at by this piece for the given buffer
 func (p *piece) text(b *Buffer) string {
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Fprintf(os.Stderr, "DEBUG: %#v\n", err)
+		}
+	}()
 	add := b.add.String()
 	text := ""
 	switch p.buffer {
@@ -106,9 +113,7 @@ func (b *Buffer) pieceAt(loc int64) (*piece, int64, int) {
 // Inspect returns the internal piece table of the buffer as a string.
 func (b *Buffer) Inspect() string {
 	out := bytes.NewBufferString("")
-	for i, piece := range b.pieces {
-		fmt.Fprintf(out, "%3d %5s %3d %3d %q\n", i, piece.buffer, piece.offset, piece.length, piece.text(b))
-	}
+	dumpPieces(out, b.pieces, b)
 	return out.String()
 }
 
@@ -121,10 +126,11 @@ func (b *Buffer) Insert(loc int64, text string) *Buffer {
 		length: int64(len(text)),
 	}
 	fmt.Fprintf(b.add, "%s", text)
-
 	if currentPiece != nil {
 		split := currentPiece.split(loc - offset)
 		before, after := split[0], split[1:]
+		rest := make([]*piece, len(b.pieces[listIndex+1:]))
+		copy(rest, b.pieces[listIndex+1:])
 		if listIndex == 0 {
 			b.pieces = append(
 				[]*piece{
@@ -133,10 +139,9 @@ func (b *Buffer) Insert(loc int64, text string) *Buffer {
 				},
 				after...,
 			)
-
+			b.pieces = append(b.pieces, rest...)
 		} else {
-			rest := make([]*piece, len(b.pieces[listIndex+1:]))
-			copy(rest, b.pieces[listIndex+1:])
+
 			b.pieces = append(b.pieces[0:listIndex], before, newPiece)
 			b.pieces = append(b.pieces, after...)
 			b.pieces = append(b.pieces, rest...)
@@ -149,43 +154,33 @@ func (b *Buffer) Insert(loc int64, text string) *Buffer {
 	return b
 }
 
+func dumpPieces(out io.Writer, pieces []*piece, b *Buffer) {
+	for i, piece := range pieces {
+		fmt.Fprintf(out, "%3d %5s %3d %3d %q\n", i, piece.buffer, piece.offset, piece.length, piece.text(b))
+	}
+}
+
 // Delete removes n characters at loc in the buffer.
 func (b *Buffer) Delete(loc int64, n int64) *Buffer {
-	currentPiece, offset, listIndex := b.pieceAt(loc)
-	if currentPiece == nil {
-		return b
+	endLoc := loc + n
+	beginPiece, beginOffset, beginIndex := b.pieceAt(loc)
+	endPiece, endOffset, endIndex := b.pieceAt(endLoc)
+	beginSplit := beginPiece.split(loc - beginOffset)
+	endSplit := endPiece.split(endLoc - endOffset)
+	result := []*piece{beginSplit[0]}
+	if len(endSplit) > 1 {
+		result = append(result, endSplit[1])
 	}
-
-	// fmt.Fprintf(os.Stderr, "offset: %#v\n", offset)
-	// fmt.Fprintf(os.Stderr, "loc: %#v\n", loc)
-	// fmt.Fprintf(os.Stderr, "n: %#v\n", n)
-	// Edit is at beginning of span
-	if offset == loc {
-		currentPiece.offset += n
-		currentPiece.length -= n
-		return b
+	if endIndex < len(b.pieces) {
+		result = append(result, b.pieces[endIndex+1:]...)
 	}
-
-	// Edit is in the middle of the span
-	split := currentPiece.split(loc - offset)
-	before, after := split[0], split[1:]
-	// fmt.Fprintf(os.Stderr, "PIECE: %#v\n", currentPiece)
-	// fmt.Fprintf(os.Stderr, "BEFORE: %#v\n", before)
-	// if len(after) > 0 {
-	// 	fmt.Fprintf(os.Stderr, "AFTER: %#v\n", after[0])
-	// }
-	if len(after) > 0 {
-		after[0].offset += n
-		after[0].length -= n
-	}
-	if listIndex == 0 {
-		b.pieces = split
+	if beginIndex == 0 {
+		b.pieces = result
 	} else {
-		rest := make([]*piece, len(b.pieces[listIndex+1:]))
-		copy(rest, b.pieces[listIndex+1:])
-		b.pieces = append(b.pieces[0:listIndex], before)
-		b.pieces = append(b.pieces, after...)
-		b.pieces = append(b.pieces, rest...)
+		b.pieces = append(
+			b.pieces[0:beginIndex],
+			result...,
+		)
 	}
 
 	return b
