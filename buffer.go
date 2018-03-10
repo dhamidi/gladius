@@ -42,7 +42,7 @@ type piece struct {
 }
 
 // split splits a piece into two separate pieces at position i.
-func (p *piece) split(i int64) (*piece, *piece) {
+func (p *piece) split(i int64) []*piece {
 	before := &piece{
 		buffer: p.buffer,
 		offset: p.offset,
@@ -53,7 +53,11 @@ func (p *piece) split(i int64) (*piece, *piece) {
 		offset: before.offset + before.length,
 		length: p.length - before.length,
 	}
-	return before, after
+	result := []*piece{before}
+	if after.length > 0 {
+		result = append(result, after)
+	}
+	return result
 }
 
 // text returns the text pointed at by this piece for the given buffer
@@ -119,17 +123,22 @@ func (b *Buffer) Insert(loc int64, text string) *Buffer {
 	fmt.Fprintf(b.add, "%s", text)
 
 	if currentPiece != nil {
-		before, after := currentPiece.split(loc - offset)
+		split := currentPiece.split(loc - offset)
+		before, after := split[0], split[1:]
 		if listIndex == 0 {
-			b.pieces = []*piece{
-				before,
-				newPiece,
-				after,
-			}
+			b.pieces = append(
+				[]*piece{
+					before,
+					newPiece,
+				},
+				after...,
+			)
+
 		} else {
 			rest := make([]*piece, len(b.pieces[listIndex+1:]))
 			copy(rest, b.pieces[listIndex+1:])
-			b.pieces = append(b.pieces[0:listIndex], before, newPiece, after)
+			b.pieces = append(b.pieces[0:listIndex], before, newPiece)
+			b.pieces = append(b.pieces, after...)
 			b.pieces = append(b.pieces, rest...)
 		}
 		return b
@@ -147,28 +156,37 @@ func (b *Buffer) Delete(loc int64, n int64) *Buffer {
 		return b
 	}
 
+	// fmt.Fprintf(os.Stderr, "offset: %#v\n", offset)
+	// fmt.Fprintf(os.Stderr, "loc: %#v\n", loc)
+	// fmt.Fprintf(os.Stderr, "n: %#v\n", n)
 	// Edit is at beginning of span
 	if offset == loc {
-		currentPiece.offset = n
+		currentPiece.offset += n
 		currentPiece.length -= n
 		return b
 	}
 
 	// Edit is in the middle of the span
-	before, after := currentPiece.split(loc - offset)
-	after.offset += n
-	after.length -= n
-	if listIndex == 0 {
-		b.pieces = []*piece{
-			before,
-			after,
-		}
-	} //  else {
-	//         rest := make([]*piece, len(b.pieces[listIndex+1:]))
-	//         copy(rest, b.pieces[listIndex+1:])
-	//         b.pieces = append(b.pieces[0:listIndex], before, newPiece, after)
-	//         b.pieces = append(b.pieces, rest...)
+	split := currentPiece.split(loc - offset)
+	before, after := split[0], split[1:]
+	// fmt.Fprintf(os.Stderr, "PIECE: %#v\n", currentPiece)
+	// fmt.Fprintf(os.Stderr, "BEFORE: %#v\n", before)
+	// if len(after) > 0 {
+	// 	fmt.Fprintf(os.Stderr, "AFTER: %#v\n", after[0])
 	// }
+	if len(after) > 0 {
+		after[0].offset += n
+		after[0].length -= n
+	}
+	if listIndex == 0 {
+		b.pieces = split
+	} else {
+		rest := make([]*piece, len(b.pieces[listIndex+1:]))
+		copy(rest, b.pieces[listIndex+1:])
+		b.pieces = append(b.pieces[0:listIndex], before)
+		b.pieces = append(b.pieces, after...)
+		b.pieces = append(b.pieces, rest...)
+	}
 
 	return b
 }
