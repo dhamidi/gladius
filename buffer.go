@@ -140,6 +140,18 @@ func (b *Buffer) Insert(loc int64, text string) *Buffer {
 	return b
 }
 
+// Delete removes n characters at loc in the buffer.
+func (b *Buffer) Delete(loc int64, n int64) *Buffer {
+	currentPiece, _, _ := b.pieceAt(loc)
+	if currentPiece == nil {
+		return b
+	}
+
+	currentPiece.offset = n
+	currentPiece.length -= n
+	return b
+}
+
 // String returns the current contents of the buffer as a single string.
 func (b *Buffer) String() string {
 	out := bytes.NewBufferString("")

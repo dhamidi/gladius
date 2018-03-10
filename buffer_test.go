@@ -48,3 +48,13 @@ func TestBuffer_MultipleInsertsOfDifferentTypes(t *testing.T) {
 		t.Fatalf("Expected %q, got %q", exp, act)
 	}
 }
+
+func TestBuffer_DeleteRemovesTextAtBeginning(t *testing.T) {
+	buffer := NewBufferString("abc")
+	buffer.Delete(0, 1)
+	t.Logf("Buffer piece table:\n%s\n", buffer.Inspect())
+
+	if exp, act := "bc", buffer.String(); exp != act {
+		t.Fatalf("Expected %q, got %q", exp, act)
+	}
+}
