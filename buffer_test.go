@@ -60,3 +60,10 @@ func TestBuffer_DeleteRemovesTextInTheMiddle(t *testing.T) {
 
 	assertBuffer(t, buffer, "ac")
 }
+
+func TestBuffer_DeleteRemovesTextAtEnd(t *testing.T) {
+	buffer := NewBufferString("abc")
+	buffer.Delete(2, 1)
+
+	assertBuffer(t, buffer, "ab")
+}
