@@ -102,6 +102,8 @@ func (ed *Editor) BeginningOfLine() *Editor {
 	newPosition := strings.LastIndex(ed.Before(), "\n")
 	if newPosition > -1 {
 		ed.cursor = int64(newPosition) + int64(1)
+	} else {
+		ed.BeginningOfBuffer()
 	}
 	return ed
 }
@@ -118,6 +120,16 @@ func (ed *Editor) EndOfLine() *Editor {
 
 // ForwardLine moves the cursor forward by n lines.
 func (ed *Editor) ForwardLine(n int) *Editor {
-	ed.EndOfLine().Forward(1)
+	for ; n > 0; n-- {
+		ed.EndOfLine().Forward(1)
+	}
+	return ed
+}
+
+// BackwardLine moves the cursor backward by n lines.
+func (ed *Editor) BackwardLine(n int) *Editor {
+	for ; n > 0; n-- {
+		ed.BeginningOfLine().Backward(1).BeginningOfLine()
+	}
 	return ed
 }

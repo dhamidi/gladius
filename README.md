@@ -56,15 +56,18 @@ The cursor position of a new editor instance is always at the beginning of the t
 
 ## API overview
 
-| Operation                    | Effect                                                    |
-| ---------                    | ------                                                    |
-| `editor.Insert("text")`      | inserts `"text"` at the cursor position                   |
-| `editor.Delete(3)`           | deletes `3` characters right of the cursor                |
-| `editor.String()`            | returns the contents of the underlying buffer as a string |
-| `editor.Forward(1)`          | moves cursor forward by `1` character                     |
-| `editor.ForwardLine(1)`      | moves cursor forward by `1` line                          |
-| `editor.Backward(1)`         | moves cursor backward by `1` character                    |
-| `editor.BeginningOfBuffer()` | Moves cursor to beginning of text                         |
-| `editor.EndOfBuffer()`       | Moves cursor to end of text                               |
-| `editor.BeginningOfLine()`   | Moves cursor to beginning of the current line             |
-| `editor.EndOfLine()`         | Moves cursor to end of the current line                   |
+| Operation                    | Effect                                                                      |
+| ---------                    | ------                                                                      |
+| `editor.Insert("text")`      | inserts `"text"` at the cursor position                                     |
+| `editor.Delete(3)`           | deletes `3` characters right of the cursor                                  |
+| `editor.After()`             | returns the contents of the underlying buffer after the cursor as a string  |
+| `editor.Before()`            | returns the contents of the underlying buffer before the cursor as a string |
+| `editor.String()`            | returns the contents of the underlying buffer as a string                   |
+| `editor.Forward(1)`          | moves cursor forward by `1` character                                       |
+| `editor.ForwardLine(1)`      | moves cursor forward by `1` line                                            |
+| `editor.Backward(1)`         | moves cursor backward by `1` character                                      |
+| `editor.BackwardLine(1)`     | moves cursor backward by `1` line                                           |
+| `editor.BeginningOfBuffer()` | Moves cursor to beginning of text                                           |
+| `editor.EndOfBuffer()`       | Moves cursor to end of text                                                 |
+| `editor.BeginningOfLine()`   | Moves cursor to beginning of the current line                               |
+| `editor.EndOfLine()`         | Moves cursor to end of the current line                                     |

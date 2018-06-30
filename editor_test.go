@@ -96,11 +96,11 @@ func TestEditor_BeginningOfLine_sets_position_to_first_newline_before_cursor(t *
 	assertEqual(t, editor.Position(), int64(len("hello\n")+1))
 }
 
-func TestEditor_BeginningOfLine_does_not_change_cursor_position_if_no_newline_is_before_the_cursor(t *testing.T) {
+func TestEditor_BeginningOfLine_moves_to_beginning_of_buffer_if_no_newline_is_before_the_cursor(t *testing.T) {
 	editor := NewEditor("hello").EndOfBuffer()
 	editor.Insert("orld").BeginningOfLine().Insert("w")
-	assertEqual(t, editor.String(), "helloorldw")
-	assertEqual(t, editor.Position(), int64(len("helloorldw")))
+	assertEqual(t, editor.String(), "whelloorld")
+	assertEqual(t, editor.Position(), int64(1))
 }
 
 func TestEditor_EndOfLine_sets_position_to_first_newline_after_cursor(t *testing.T) {
@@ -124,4 +124,37 @@ func TestEditor_ForwardLine_moves_the_cursor_to_the_beginning_of_the_next_line(t
 		Insert(", ")
 	assertEqual(t, editor.String(), "hello\n, world\n")
 	assertEqual(t, editor.Position(), int64(len("hello\n, ")))
+}
+
+func TestEditor_ForwardLine_moves_the_cursor_through_multiple_lines(t *testing.T) {
+	editor := NewEditor("").
+		Insert("hello\n").
+		Insert("world\n").
+		BeginningOfBuffer().
+		ForwardLine(2).
+		Insert("!")
+	assertEqual(t, editor.String(), "hello\nworld\n!")
+	assertEqual(t, editor.Position(), int64(len("hello\nworld\n!")))
+}
+
+func TestEditor_BackwardLine_moves_the_cursor_to_the_beginning_of_the_previous(t *testing.T) {
+	editor := NewEditor("").
+		Insert("hello\n").
+		Insert("world\n").
+		EndOfBuffer().
+		BackwardLine(1).
+		Insert(", ")
+	assertEqual(t, editor.String(), "hello\n, world\n")
+	assertEqual(t, editor.Position(), int64(len("hello\n, ")))
+}
+
+func TestEditor_BackwardLine_moves_the_cursor_through_multiple_lines(t *testing.T) {
+	editor := NewEditor("").
+		Insert("hello\n").
+		Insert("world\n").
+		EndOfBuffer().
+		BackwardLine(2).
+		Insert("!")
+	assertEqual(t, editor.String(), "!hello\nworld\n")
+	assertEqual(t, editor.Position(), int64(len("!")))
 }
