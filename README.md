@@ -1,6 +1,6 @@
 # Description
 
-![[Documentation](https://godoc.org/github.com/dhamidi/gladius?status.svg)]
+![Documentation](https://godoc.org/github.com/dhamidi/gladius?status.svg)
 
 Gladius is a headless, scriptable text editor for use in other programs.
 
