@@ -100,6 +100,20 @@ func TestBuffer_MixedInsertsAndDeletes(t *testing.T) {
 	assertBuffer(t, buffer, "cascade")
 }
 
+func TestBuffer_FindBackwards_returns_offset_of_character_before_given_position(t *testing.T) {
+	buffer := NewBufferString("abc")
+	buffer.Insert(2, "def")
+	locationOfB := buffer.FindBackwards(3, 'b')
+	assertEqual(t, locationOfB, int64(1))
+}
+
+func TestBuffer_FindBackwards_returns_minus_one_if_character_can_not_be_found(t *testing.T) {
+	buffer := NewBufferString("abc")
+	buffer.Insert(2, "def")
+	locationOfB := buffer.FindBackwards(3, 'x')
+	assertEqual(t, locationOfB, int64(-1))
+}
+
 func BenchmarkSequentialInsertAtEnd(b *testing.B) {
 	buffer := NewBufferString("")
 	position := int64(0)

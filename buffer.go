@@ -42,6 +42,13 @@ type piece struct {
 	length int64           // the length of the span in the given buffer
 }
 
+// indexOf returns the zero-based index of the given byte in this piece.
+//
+// If the byte does not occur in this piece, -1 is returned.
+func (p *piece) indexOf(buf *Buffer, b byte) int {
+	return bytes.Index([]byte(p.text(buf)), []byte{b})
+}
+
 // split splits a piece into two separate pieces at position i.
 func (p *piece) split(i int64) []*piece {
 	before := &piece{
@@ -102,6 +109,30 @@ func (b *Buffer) pieceAt(loc int64) (*piece, int64, int) {
 	}
 
 	return nil, loc, -1
+}
+
+// FindBackwards returns the offset of byte b before position loc.
+//
+// If no such byte can be found before loc, -1 is returned.
+func (buf *Buffer) FindBackwards(loc int64, b byte) int64 {
+	piece, offset, listIndex := buf.pieceAt(loc)
+	if listIndex == -1 {
+		return -1
+	}
+
+	for {
+		if i := piece.indexOf(buf, b); i != -1 {
+			return int64(offset + int64(i))
+		}
+		listIndex--
+		if listIndex < 0 {
+			break
+		}
+		piece = buf.pieces[listIndex]
+		offset = offset - piece.length
+	}
+
+	return -1
 }
 
 // Inspect returns the internal piece table of the buffer as a string.
