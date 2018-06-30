@@ -62,6 +62,7 @@ The cursor position of a new editor instance is always at the beginning of the t
 | `editor.Delete(3)`           | deletes `3` characters right of the cursor                |
 | `editor.String()`            | returns the contents of the underlying buffer as a string |
 | `editor.Forward(1)`          | moves cursor forward by `1` character                     |
+| `editor.ForwardLine(1)`      | moves cursor forward by `1` line                          |
 | `editor.Backward(1)`         | moves cursor backward by `1` character                    |
 | `editor.BeginningOfBuffer()` | Moves cursor to beginning of text                         |
 | `editor.EndOfBuffer()`       | Moves cursor to end of text                               |

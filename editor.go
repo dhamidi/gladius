@@ -1,16 +1,22 @@
 package gladius
 
+import "strings"
+
 // Editor is a buffer with an attached cursor that represents the
 // current insert position in the buffer.
 type Editor struct {
-	cursor int64
-	buffer *Buffer
+	cursor               int64
+	buffer               *Buffer
+	cachedBufferContents string
+	cacheIsDirty         bool
 }
 
 // NewEditor creates an editor for a buffer with the provided contents.
 func NewEditor(contents string) *Editor {
 	return &Editor{
-		buffer: NewBufferString(contents),
+		buffer:               NewBufferString(contents),
+		cacheIsDirty:         false,
+		cachedBufferContents: contents,
 	}
 }
 
@@ -49,17 +55,33 @@ func (ed *Editor) Forward(n int64) *Editor {
 func (ed *Editor) Insert(text string) *Editor {
 	ed.buffer.Insert(ed.cursor, text)
 	ed.cursor += int64(len(text))
+	ed.cacheIsDirty = true
 	return ed
 }
 
 // String returns the contents of the buffer managed by this editor.
 func (ed *Editor) String() string {
-	return ed.buffer.String()
+	if ed.cacheIsDirty {
+		ed.cachedBufferContents = ed.buffer.String()
+		ed.cacheIsDirty = false
+	}
+	return ed.cachedBufferContents
+}
+
+// Before returns the contents of the buffer before the cursor.
+func (ed *Editor) Before() string {
+	return ed.String()[0:ed.cursor]
+}
+
+// After returns the contents of the buffer after the cursor.
+func (ed *Editor) After() string {
+	return ed.String()[ed.cursor:]
 }
 
 // Delete removes n characters after the cursor.
 func (ed *Editor) Delete(n int64) *Editor {
 	ed.buffer.Delete(ed.cursor, n)
+	ed.cacheIsDirty = true
 	return ed
 }
 
@@ -77,19 +99,25 @@ func (ed *Editor) EndOfBuffer() *Editor {
 
 // BeginningOfLine sets the cursor after the first newline character before the cursor.
 func (ed *Editor) BeginningOfLine() *Editor {
-	newPosition := ed.buffer.FindBackwards(ed.cursor, '\n')
+	newPosition := strings.LastIndex(ed.Before(), "\n")
 	if newPosition > -1 {
-		ed.cursor = newPosition + 1
+		ed.cursor = int64(newPosition) + int64(1)
 	}
 	return ed
 }
 
-// BeginningOfLine sets the cursor to the first newline character after the cursor.
+// EndOfLine sets the cursor to the first newline character after the cursor.
 func (ed *Editor) EndOfLine() *Editor {
-	newPosition := ed.buffer.FindForwards(ed.cursor, '\n')
-	if newPosition > -1 {
-		ed.cursor = newPosition
+	offsetFromCursor := strings.Index(ed.After(), "\n")
+	if offsetFromCursor > -1 {
+		ed.cursor = ed.cursor + int64(offsetFromCursor)
 		return ed
 	}
 	return ed.EndOfBuffer()
+}
+
+// ForwardLine moves the cursor forward by n lines.
+func (ed *Editor) ForwardLine(n int) *Editor {
+	ed.EndOfLine().Forward(1)
+	return ed
 }

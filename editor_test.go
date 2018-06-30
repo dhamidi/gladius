@@ -114,3 +114,14 @@ func TestEditor_EndOfLine_moves_to_end_of_buffer_if_no_newline_occurs_after_the_
 	editor := NewEditor("hello").EndOfLine()
 	assertEqual(t, editor.Position(), int64(len("hello")))
 }
+
+func TestEditor_ForwardLine_moves_the_cursor_to_the_beginning_of_the_next_line(t *testing.T) {
+	editor := NewEditor("").
+		Insert("hello\n").
+		Insert("world\n").
+		BeginningOfBuffer().
+		ForwardLine(1).
+		Insert(", ")
+	assertEqual(t, editor.String(), "hello\n, world\n")
+	assertEqual(t, editor.Position(), int64(len("hello\n, ")))
+}
