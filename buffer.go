@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"os"
 )
 
 // Buffer is a text buffer supporting simple edit operations at random
@@ -64,11 +63,6 @@ func (p *piece) split(i int64) []*piece {
 
 // text returns the text pointed at by this piece for the given buffer
 func (p *piece) text(b *Buffer) string {
-	defer func() {
-		if err := recover(); err != nil {
-			fmt.Fprintf(os.Stderr, "DEBUG: %#v\n", err)
-		}
-	}()
 	add := b.add.String()
 	text := ""
 	switch p.buffer {
@@ -184,6 +178,15 @@ func (b *Buffer) Delete(loc int64, n int64) *Buffer {
 	}
 
 	return b
+}
+
+// Len returns the length of the string stored in this buffer
+func (b *Buffer) Len() int64 {
+	n := int64(0)
+	for _, p := range b.pieces {
+		n = n + p.length
+	}
+	return n
 }
 
 // String returns the current contents of the buffer as a single string.
