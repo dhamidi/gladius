@@ -1,6 +1,10 @@
 package gladius
 
-import "testing"
+import (
+	"fmt"
+	"math/rand"
+	"testing"
+)
 
 func assertBuffer(t *testing.T, b *Buffer, expected string) {
 	t.Helper()
@@ -94,4 +98,33 @@ func TestBuffer_MixedInsertsAndDeletes(t *testing.T) {
 	buffer.Insert(0, "casc") // cascade
 
 	assertBuffer(t, buffer, "cascade")
+}
+
+func BenchmarkSequentialInsertAtEnd(b *testing.B) {
+	buffer := NewBufferString("")
+	position := int64(0)
+	for i := 0; i < b.N; i++ {
+		text := fmt.Sprintf("%d", b.N)
+		buffer.Insert(position, text)
+		position = position + int64(len(text))
+	}
+}
+
+func BenchmarkSequentialInsertAtBeginning(b *testing.B) {
+	buffer := NewBufferString("")
+	for i := 0; i < b.N; i++ {
+		text := fmt.Sprintf("%d", b.N)
+		buffer.Insert(0, text)
+	}
+}
+
+func BenchmarkRandomInsert(b *testing.B) {
+	buffer := NewBufferString("")
+	for i := 0; i < b.N; i++ {
+		position := int64(0)
+		if len := buffer.Len(); len > 0 {
+			position = rand.Int63n(len)
+		}
+		buffer.Insert(position, fmt.Sprintf("%d", position))
+	}
 }
